@@ -103,7 +103,7 @@
   <div class="result" id="resultBox">Scan result will appear here</div>
 
   <script>
-    function scanURL() {
+    async function scanURL() {
       const urlInput = document.getElementById('urlInput');
       const resultBox = document.getElementById('resultBox');
       const scanButton = document.querySelector('button');
@@ -116,23 +116,42 @@
         return;
       }
 
-      // Show scanning state
       resultBox.textContent = "Scanning...";
       resultBox.className = 'result scanning';
       scanButton.disabled = true;
 
-      // Simulate scanning delay (e.g. 3 seconds)
-      setTimeout(() => {
-        // Here you can update resultBox based on your real scan results later
-        // For demo, just show a dummy "Safe" result:
+      try {
+        const response = await fetch('https://aquatic-nettle-lupin.glitch.me/predict', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url })
+        });
 
-        resultBox.textContent = "Safe";
-        resultBox.className = 'result safe';
+        if (!response.ok) throw new Error("Server error");
 
+        const data = await response.json();
+
+        if(data.prediction === 'Safe') {
+          resultBox.className = 'result safe';
+        } else {
+          resultBox.className = 'result malicious';
+        }
+
+        resultBox.innerHTML = `
+          <span>${data.prediction}</span><br>
+          Confidence: ${data.confidence}<br>
+          Reason: ${data.reason}
+        `;
+      } catch (err) {
+        resultBox.textContent = "Error scanning URL. Please try again.";
+        resultBox.className = 'result malicious';
+        console.error(err);
+      } finally {
         scanButton.disabled = false;
-      }, 3000);
+      }
     }
   </script>
 
 </body>
 </html>
+
