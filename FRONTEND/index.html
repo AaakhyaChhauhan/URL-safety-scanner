@@ -1,1 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>🛡️ URL Safety Scanner</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      padding: 60px 20px;
+      margin: 0;
+      color: #333;
+    }
+    h1 {
+      color: #004080;
+      margin-bottom: 30px;
+      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    input[type="text"] {
+      width: 320px;
+      max-width: 90vw;
+      padding: 14px 16px;
+      font-size: 16px;
+      border: 2px solid #0077cc;
+      border-radius: 10px;
+      transition: border-color 0.3s, box-shadow 0.3s;
+      outline: none;
+    }
+    input[type="text"]:focus {
+      border-color: #004080;
+      box-shadow: 0 0 10px rgba(0, 68, 128, 0.3);
+    }
+    button {
+      margin-top: 20px;
+      background-color: #0077cc;
+      color: white;
+      border: none;
+      padding: 14px 28px;
+      font-size: 16px;
+      font-weight: 600;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      user-select: none;
+    }
+    button:disabled {
+      background-color: #99c2e6;
+      cursor: not-allowed;
+    }
+    button:hover:not(:disabled) {
+      background-color: #005fa3;
+    }
+    .result {
+      margin-top: 30px;
+      width: 320px;
+      max-width: 90vw;
+      padding: 20px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+      font-size: 18px;
+      font-weight: 600;
+      min-height: 80px;
+      text-align: center;
+      line-height: 1.5;
+      color: #333;
+    }
+    .result.safe {
+      color: #28a745;
+      border: 2px solid #28a745;
+      background: #d4edda;
+    }
+    .result.malicious {
+      color: #dc3545;
+      border: 2px solid #dc3545;
+      background: #f8d7da;
+    }
+    .result.scanning {
+      color: #ff8c00;
+      border: 2px solid #ff8c00;
+      background: #fff3cd;
+    }
+    @media (max-width: 400px) {
+      input[type="text"], button, .result {
+        width: 90vw;
+      }
+    }
+  </style>
+</head>
+<body>
 
+  <h1>🛡️ URL Safety Scanner</h1>
+
+  <input type="text" id="urlInput" placeholder="Enter URL (e.g. https://bit.ly/test)" />
+  <button onclick="scanURL()">Scan</button>
+
+  <div class="result" id="resultBox">Scan result will appear here</div>
+
+  <script>
+    async function scanURL() {
+      const urlInput = document.getElementById('urlInput');
+      const resultBox = document.getElementById('resultBox');
+      const scanButton = document.querySelector('button');
+
+      const url = urlInput.value.trim();
+
+      if (!url) {
+        resultBox.textContent = "Please enter a valid URL.";
+        resultBox.className = 'result malicious';
+        return;
+      }
+
+      resultBox.textContent = "Scanning...";
+      resultBox.className = 'result scanning';
+      scanButton.disabled = true;
+
+      try {
+        const response = await fetch('https://aquatic-nettle-lupin.glitch.me/predict', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url })
+        });
+
+        if (!response.ok) throw new Error("Server error");
+
+        const data = await response.json();
+
+        if(data.prediction === 'Safe') {
+          resultBox.className = 'result safe';
+        } else {
+          resultBox.className = 'result malicious';
+        }
+
+        resultBox.innerHTML = `
+          <span>${data.prediction}</span><br>
+          Confidence: ${data.confidence}<br>
+          Reason: ${data.reason}
+        `;
+      } catch (err) {
+        resultBox.textContent = "Error scanning URL. Please try again.";
+        resultBox.className = 'result malicious';
+        console.error(err);
+      } finally {
+        scanButton.disabled = false;
+      }
+    }
+  </script>
+
+</body>
+</html>
